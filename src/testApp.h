@@ -6,16 +6,6 @@
 #include "ofxKinect.h"
 
 
-typedef struct{
-	ofColor color;
-	ofVec3f pos;
-	ofVec3f floatPos;
-	float radius;
-    bool bMouseOver;
-    bool bGazeOver;
-} DemoSphere;
-
-
 class testApp : public ofBaseApp
 {
   public:
@@ -42,7 +32,6 @@ class testApp : public ofBaseApp
 	ofEasyCam			cam;
 	bool showOverlay;
 	bool predictive;
-	vector<DemoSphere> demos;
     
     ofVec3f cursor2D;
     ofVec3f cursor3D;
@@ -52,6 +41,8 @@ class testApp : public ofBaseApp
     
     ofVec3f cursorGaze;
     
+    ofxKinect kinect;
+    ofxCvColorImage cvcolorimage;
     
     
 };
