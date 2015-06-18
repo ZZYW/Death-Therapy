@@ -28,6 +28,7 @@
 		2F7B23031B324B4E00AD5031 /* tilt.c in Sources */ = {isa = PBXBuildFile; fileRef = 2F7B22E91B324B4E00AD5031 /* tilt.c */; };
 		2F7B23041B324B4E00AD5031 /* usb_libusb10.c in Sources */ = {isa = PBXBuildFile; fileRef = 2F7B22EA1B324B4E00AD5031 /* usb_libusb10.c */; };
 		2F7B23051B324B4E00AD5031 /* usb-1.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F7B22F21B324B4E00AD5031 /* usb-1.0.a */; };
+		2F7B23091B328AB600AD5031 /* Particle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F7B23071B328AB600AD5031 /* Particle.cpp */; };
 		647F8CA1199A793F006A51EB /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 647F8CA0199A793F006A51EB /* CoreVideo.framework */; };
 		647F8DDF199AA4F1006A51EB /* ofxOculusDK2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 647F8D96199AA4F1006A51EB /* ofxOculusDK2.cpp */; };
 		BBAB23CB13894F3D00AA2426 /* GLUT.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BBAB23BE13894E4700AA2426 /* GLUT.framework */; };
@@ -210,6 +211,8 @@
 		2F7B22EB1B324B4E00AD5031 /* usb_libusb10.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = usb_libusb10.h; sourceTree = "<group>"; };
 		2F7B22EF1B324B4E00AD5031 /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
 		2F7B22F21B324B4E00AD5031 /* usb-1.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "usb-1.0.a"; sourceTree = "<group>"; };
+		2F7B23071B328AB600AD5031 /* Particle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Particle.cpp; sourceTree = "<group>"; };
+		2F7B23081B328AB600AD5031 /* Particle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Particle.h; sourceTree = "<group>"; };
 		647F8CA0199A793F006A51EB /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		647F8D96199AA4F1006A51EB /* ofxOculusDK2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxOculusDK2.cpp; sourceTree = "<group>"; };
 		647F8D97199AA4F1006A51EB /* ofxOculusDK2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOculusDK2.h; sourceTree = "<group>"; };
@@ -760,6 +763,8 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
 				E4B69E1E0A3A1BDC003C02F2 /* testApp.cpp */,
+				2F7B23071B328AB600AD5031 /* Particle.cpp */,
+				2F7B23081B328AB600AD5031 /* Particle.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -862,6 +867,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2F7B23031B324B4E00AD5031 /* tilt.c in Sources */,
+				2F7B23091B328AB600AD5031 /* Particle.cpp in Sources */,
 				2F7B227F1B324B4A00AD5031 /* ofxCvColorImage.cpp in Sources */,
 				2F7B22FB1B324B4E00AD5031 /* ofxKinect.cpp in Sources */,
 				2F7B22851B324B4A00AD5031 /* ofxCvShortImage.cpp in Sources */,

@@ -6,6 +6,11 @@
 #include "ofxKinect.h"
 
 
+struct particleTarget {
+    ofVec3f location;
+    bool isChosen;
+};
+
 class testApp : public ofBaseApp
 {
   public:
@@ -15,6 +20,7 @@ class testApp : public ofBaseApp
 	void draw();
 	
 	void drawScene();
+    void drawPointCloud();
 	
 	void keyPressed(int key);
 	void keyReleased(int key);

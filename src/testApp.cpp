@@ -15,18 +15,23 @@ void testApp::setup()
 	ofHideCursor();
 	
 	oculusRift.baseCamera = &cam;
-	oculusRift.setup();
+//	oculusRift.setup();
 	
 	//enable mouse;
 	cam.begin();
 	cam.end();
+    
+    kinect.setRegistration(true);
+    kinect.init();
+    kinect.open();
+    
 }
 
 
 //--------------------------------------------------------------
 void testApp::update()
 {
-
+    kinect.update();
 }
 
 
@@ -89,11 +94,42 @@ void testApp::draw()
 void testApp::drawScene()
 {
 	
-	ofPushMatrix();
-	ofRotate(90, 0, 0, -1);
-	ofDrawGridPlane(500.0f, 10.0f, false );
-	ofPopMatrix();
+//	ofPushMatrix();
+//	ofRotate(90, 0, 0, -1);
+//	ofDrawGridPlane(500.0f, 10.0f, false );
+//	ofPopMatrix();
+    
+    
+    ofPushMatrix();
+    drawPointCloud();
+    ofPopMatrix();
 	
+}
+
+//-------------------------------------------------------------
+void testApp::drawPointCloud() {
+    int w = 640;
+    int h = 480;
+    ofMesh mesh;
+    mesh.setMode(OF_PRIMITIVE_POINTS);
+    int step = 2;
+    for(int y = 0; y < h; y += step) {
+        for(int x = 0; x < w; x += step) {
+            if(kinect.getDistanceAt(x, y) > 0) {
+                mesh.addColor(kinect.getColorAt(x,y));
+                mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+            }
+        }
+    }
+    glPointSize(1);
+    ofPushMatrix();
+    // the projected points are 'upside down' and 'backwards'
+    ofScale(1, -1, -1);
+    ofTranslate(0, 0, -1000); // center the points a bit
+    ofEnableDepthTest();
+    mesh.drawVertices();
+    ofDisableDepthTest();
+    ofPopMatrix();
 }
 
 //--------------------------------------------------------------
