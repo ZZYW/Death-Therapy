@@ -6,7 +6,7 @@
 #include "ofxKinect.h"
 #include "ofxOsc.h"
 
-#define PORT 12344
+#define PORT 12345
 #define NUM_MSG_STRING 20
 
 

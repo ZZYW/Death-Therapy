@@ -36,8 +36,11 @@ void ofApp::update()
     while(oscReceiver.hasWaitingMessages()){
         ofxOscMessage m;
         oscReceiver.getNextMessage(&m);
-        mellowReading = m.getNumArgs();
-        cout<<mellowReading<<endl;
+        if(m.getAddress() =="/muse/elements/experimental/mellow"){
+            mellowReading = m.getArgAsFloat(0);
+            cout<<mellowReading<<endl;
+        }
+
         
     }
 }
