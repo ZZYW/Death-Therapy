@@ -14,6 +14,8 @@
 		<string>https://github.com/obviousjim/ofxOculusDK2.git</string>
 		<key>5546BCEED4D70F2CBB1FF98AFA83ECF26794FEB4</key>
 		<string>github.com:wangyangwang/Sukhavati-v2.git</string>
+		<key>7E804D925461714118DB355C65BC964B41D94376</key>
+		<string>https://github.com/rezaali/ofxUI.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>Sukhavati_V2.xcodeproj</string>
@@ -23,6 +25,8 @@
 		<string>../../..</string>
 		<key>5546BCEED4D70F2CBB1FF98AFA83ECF26794FEB4</key>
 		<string>../..</string>
+		<key>7E804D925461714118DB355C65BC964B41D94376</key>
+		<string>../../../../ofxUI</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>github.com:wangyangwang/Sukhavati-v2.git</string>
@@ -39,6 +43,14 @@
 			<string>082F152AF780A30C54B180FE8215453DA2D068BD</string>
 			<key>IDESourceControlWCCName</key>
 			<string></string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>7E804D925461714118DB355C65BC964B41D94376</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ofxUI</string>
 		</dict>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>

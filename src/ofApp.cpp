@@ -23,6 +23,13 @@ void ofApp::setup()
     
     oscReceiver.setup(PORT);
     
+    gui = new ofxUICanvas();
+    gui->addSlider("BACKGROUND", 0.0, 255.0,100.0);
+    gui->autoSizeToFitWidgets();
+    ofAddListener(gui->newGUIEvent, this, &ofApp::guiEvent);
+    gui->loadSettings("settings.xml");
+    
+    
 }
 
 
@@ -30,8 +37,6 @@ void ofApp::setup()
 void ofApp::update()
 {
     kinect.update();
-    
-    
     //OSC
     while(oscReceiver.hasWaitingMessages()){
         ofxOscMessage m;
@@ -40,8 +45,6 @@ void ofApp::update()
             mellowReading = m.getArgAsFloat(0);
             cout<<mellowReading<<endl;
         }
-
-        
     }
 }
 //--------------------------------------------------------------
@@ -131,6 +134,15 @@ void ofApp::drawPointCloud() {
     ofDisableDepthTest();
     ofPopMatrix();
 }
+//--------------------------------------------------------------
+
+void ofApp::guiEvent(ofxUIEventArgs &e)
+{
+    if(e.getName()=="BACKGROUND"){
+        ofxUISlider *slider = e.getSlider();
+        ofBackground(slider->getScaledValue());
+    }
+}
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key)
@@ -175,6 +187,11 @@ void ofApp::keyReleased(int key)
 
 }
 
+void ofApp::exit()
+{
+    gui->saveSettings("settings.xml");
+    delete gui;
+}
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y)
 {

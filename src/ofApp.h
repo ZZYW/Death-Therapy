@@ -1,10 +1,13 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxUI.h"
 #include "ofxOpenCv.h"
 #include "ofxOculusDK2.h"
 #include "ofxKinect.h"
 #include "ofxOsc.h"
+
+
 
 #define PORT 12345
 #define NUM_MSG_STRING 20
@@ -23,9 +26,11 @@ class ofApp : public ofBaseApp
 	void setup();
 	void update();
 	void draw();
+    void exit();
 	
 	void drawScene();
     void drawPointCloud();
+    void guiEvent(ofxUIEventArgs &e);
 	
 	void keyPressed(int key);
 	void keyReleased(int key);
@@ -57,6 +62,11 @@ class ofApp : public ofBaseApp
     
     ofxOscReceiver oscReceiver;
     float mellowReading;
+    
+    
+    ofxUICanvas *gui;
+    
+    
     
     
     
