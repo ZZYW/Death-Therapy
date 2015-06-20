@@ -29,7 +29,7 @@ class ofApp : public ofBaseApp
     void exit();
 	
 	void drawScene();
-    void drawPointCloud();
+    void drawPointCloud(int kinectIndex);
     void guiEvent(ofxUIEventArgs &e);
 	
 	void keyPressed(int key);

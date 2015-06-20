@@ -18,13 +18,11 @@ Particle::Particle(ofVec3f _location){
     target_assigned = false;
 }
 
-
 void Particle::update(){
     velocity += acceleration;
     velocity.limit(maxspeed);
     location += velocity;
     acceleration = acceleration * 0;
-    
 }
 
 void Particle::seek(ofVec3f target){
