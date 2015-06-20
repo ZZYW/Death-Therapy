@@ -11,7 +11,7 @@
 
 #define PORT 12345
 #define NUM_MSG_STRING 20
-
+#define USE_TWO_KINECTS
 
 
 struct particleTarget {
@@ -56,7 +56,9 @@ class ofApp : public ofBaseApp
     ofVec3f demoRift;
     
     ofVec3f cursorGaze;
-    
+#ifdef USE_TWO_KINECTS
+    ofxKinect kinect2;
+#endif
     ofxKinect kinect;
 
     

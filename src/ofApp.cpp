@@ -19,11 +19,17 @@ void ofApp::setup()
     kinect.init();
     kinect.open();
     
+#ifdef USE_TWO_KINECTS
+    kinect2.init();
+    kinect2.open();
+#endif
+    
     oscReceiver.setup(PORT);
     
     gui = new ofxUICanvas();
     gui->addSlider("BACKGROUND", 0.0, 255.0,100.0);
     gui->addSlider("MELLOWREADING", 0.0, 1.0, 0.0);
+    gui->addSlider("KINECTSEPERATION", -2000.0, 2000.0, 0.0);
 
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent, this, &ofApp::guiEvent);
@@ -35,6 +41,9 @@ void ofApp::setup()
 void ofApp::update()
 {
     kinect.update();
+#ifdef USE_TWO_KINECTS
+    kinect2.update();
+#endif
     //OSC
     while(oscReceiver.hasWaitingMessages()){
         ofxOscMessage m;
@@ -106,9 +115,14 @@ const int XCellCount = Width / Step;
 const int YCellCount = Height / Step;
 bool bInitCellsOnce = true;
 int frameCounter = 0;
-const int KinectCount = 1;//2;
+#ifdef USE_TWO_KINECTS
+    const int KinectCount = 2;
+#else
+    const int KinectCount = 1;//2;
+#endif
 ofVec3f oldPoints[XCellCount][YCellCount][KinectCount];
 //TODO: add some per point noise data for concentration??
+float kinectSeperation = 0;
 
 
 //--------------------------------------------------------------
@@ -118,7 +132,10 @@ void ofApp::drawScene()
     //drawPointCloud();
     for(int kinectIndex = 0; kinectIndex < KinectCount; kinectIndex++)
     {
+        ofPushMatrix();
+        
         drawPointCloud(kinectIndex);
+        ofPopMatrix();
     }
     ofPopMatrix();
 }
@@ -155,6 +172,13 @@ ofVec3f moveToward(ofVec3f before, ofVec3f destination)
 
 void ofApp::drawPointCloud(int kinectIndex)
 {
+    if (kinectIndex == 1)
+    {
+        ofTranslate(0,0, kinectSeperation);
+        ofRotateY(180);
+    }
+    
+    
     //int kinectIndex = 0; //TODO: pull kinect 1 in some cases!
     int w = Width;//640;
     int h = Height;//480;
@@ -186,12 +210,20 @@ void ofApp::drawPointCloud(int kinectIndex)
         bInitCellsOnce = false;
     }
     
+    ofxKinect *usingKinect = &kinect;
+    #ifdef USE_TWO_KINECTS
+    if (kinectIndex == 1)
+    {
+        usingKinect = &kinect2;
+    }
+    #endif
+    
     int index = 0;
     for(int y = 0, iy=0; y < h; y += step, iy++) {
         for(int x = 0, ix=0; x < w; x += step, ix++) {
             //if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 1400)
             {
-                ofVec3f focusedPoint = kinect.getWorldCoordinateAt(x, y);
+                ofVec3f focusedPoint = usingKinect->getWorldCoordinateAt(x, y);
                 ofVec3f oldPoint = oldPoints[ix][iy][kinectIndex];
                 
                 if (bInitCellsOnce)
@@ -229,7 +261,9 @@ void ofApp::drawPointCloud(int kinectIndex)
                 //newPoint = focusedPoint;
                 
                 //if((kinect.getDistanceAt(x, y) > 0 )
-                if((kinect.getDistanceAt(x, y) > 0 ) && (kinect.getDistanceAt(x, y) < 1400))
+                float kinectDistance = usingKinect->getDistanceAt(x,y);
+                //if((kinectDistance > 0 ) && (kinectDistance < 1400))
+                if((kinectDistance > 0 ))
                 {
                     //mesh.addVertex(newPoint);
                     float dr = 2;//0;//20;//2; //similar to pointsize
@@ -251,7 +285,12 @@ void ofApp::drawPointCloud(int kinectIndex)
                     std::vector<ofVec3f> corners;
                     for (int i=0; i<4; i++)
                     {
-                        mesh.addColor(kinect.getColorAt(x,y));
+//                        mesh.addColor(usingKinect->getColorAt(x,y));
+                        if(kinectIndex==1){
+                            mesh.addColor(ofColor(255,0,0));
+                        }else{
+                            mesh.addColor(ofColor(0,255,0));
+                        }
                         //corners.push_back(newPoint + dVertex[i]);
                         mesh.addVertex(newPoint + dVertex[i]);
                     }
@@ -300,6 +339,8 @@ void ofApp::drawPointCloud(int kinectIndex)
 }
 //--------------------------------------------------------------
 
+
+
 void ofApp::guiEvent(ofxUIEventArgs &e)
 {
     if(e.getName()=="BACKGROUND"){
@@ -309,6 +350,10 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     if(e.getName() == "MELLOWREADING"){
         ofxUISlider *slider = e.getSlider();
         mellowReading = slider->getScaledValue();
+    }
+    if(e.getName() == "KINECTSEPERATION"){
+        ofxUISlider *slider = e.getSlider();
+        kinectSeperation = slider->getScaledValue();
     }
 }
 
