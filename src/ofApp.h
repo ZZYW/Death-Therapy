@@ -9,6 +9,7 @@
 
 
 
+
 #define PORT 12345
 #define NUM_MSG_STRING 20
 #define USE_TWO_KINECTS
@@ -82,6 +83,13 @@ class ofApp : public ofBaseApp
     
     vector<float> buf;
     float noiseSeed;
+    
+//    vector<float> individualVariety;
+    
+    ofSoundPlayer leftSound;
+    ofSoundPlayer rightSound;
+
+    
     
     
     

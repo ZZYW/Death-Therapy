@@ -7,8 +7,20 @@ int sampleRate = 44100;
 float volume = 1;
 bool receiveOscData;
 
+
+
+
+
 void ofApp::setup()
 {
+    
+    leftSound.loadSound("The_Effects_Of_33.mp3");
+    rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
+    
+    
+//    leftSound.play();
+    rightSound.play();
+    
 	ofBackground(255);
     ofEnableSmoothing();
 	ofSetLogLevel( OF_LOG_VERBOSE );
@@ -81,6 +93,11 @@ float cameraZ = -500;
 
 void ofApp::update()
 {
+    
+    leftSound.setVolume(ofMap(mellowReading, 0, 1, 1, 0));
+    rightSound.setVolume(ofMap(mellowReading, 0, 1, 0, 1));
+    
+    
     kinect.update();
 #ifdef USE_TWO_KINECTS
     kinect2.update();
@@ -110,11 +127,11 @@ void ofApp::update()
 void ofApp::draw()
 {
 	
+
 	if(oculusRift.isSetup()){
         
         ofSetColor(255);
 		glEnable(GL_DEPTH_TEST);
-
 
 		oculusRift.beginLeftEye();
 		drawScene();
@@ -201,7 +218,6 @@ void ofApp::drawScene()
 {
     
     ofPushMatrix();
-    //drawPointCloud();
     for(int kinectIndex = 0; kinectIndex < KinectCount; kinectIndex++)
     {
         ofPushMatrix();
@@ -214,23 +230,18 @@ void ofApp::drawScene()
 }
 
 //-------------------------------------------------------------
+bool firstRun = false;
 
-ofVec3f randomWalk(ofVec3f before, float scalar, float mellowReading)
+ofVec3f randomWalk(ofVec3f before, float scalar, float mellowReading, float individualVareity)
 {
-//    ofVec3f noise = ofVec3f(
-//        ofNoise(ofGetElapsedTimef() + before.x),
-//        ofNoise(ofGetElapsedTimef() + before.y),
-//        ofNoise(ofGetElapsedTimef() + before.z));
-//    
-//    noise = (noise - 0.5f) * 2.0f; //[0,1] --> [-1,+1]
-//    
+    
     float noiseStep = 2 * ofGetLastFrameTime();
 //    cout<<noiseStep<<endl;
     ofVec3f noise = ofVec3f(ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep));
     noise = noise.getNormalized();
     
     float multiplier = ofMap(mellowReading, 0, 1, 5, 15);
-    float moveAmount = multiplier *scalar;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
+    float moveAmount = multiplier *scalar * individualVareity;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
     before += noise * moveAmount;
     return before;
 }
@@ -289,13 +300,17 @@ void ofApp::drawPointCloud(int kinectIndex)
     }
     #endif
     
+    
     int index = 0;
+    int particleCounter = 0;
     for(int y = 0, iy=0; y < h; y += step, iy++) {
         for(int x = 0, ix=0; x < w; x += step, ix++) {
             if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 1400)
             {
                 ofVec3f focusedPoint = usingKinect->getWorldCoordinateAt(x, y);
                 ofVec3f oldPoint = oldPoints[ix][iy][kinectIndex];
+                
+            
                 
                 if (bInitCellsOnce)
                 {//make sure we give good data on the first iteration!
@@ -309,7 +324,7 @@ void ofApp::drawPointCloud(int kinectIndex)
                     float concentrationError = 1.0 - (mellowReading * (1.0f / MellowThreshold)); //[0, 0.5] --> [1, 0]
                     float maxDist = concentrationError * 400.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
                     
-                    newPoint = randomWalk(oldPoint, concentrationError, mellowReading);
+                    newPoint = randomWalk(oldPoint, concentrationError, mellowReading, 1);
                     //if (false)
                     {
                         float dist2 = (newPoint).squareDistance(focusedPoint);
@@ -347,8 +362,8 @@ void ofApp::drawPointCloud(int kinectIndex)
                     for (int i=0; i<4; i++)
                     {
                         ofColor originalColor = usingKinect->getColorAt(x, y);
-                        originalColor.setBrightness(originalColor.getBrightness() * 2.0);
-//                        originalColor.setSaturation(originalColor.getSaturation() * 0.8f);
+//                        originalColor.setBrightness(originalColor.getBrightness() * 1.50);
+//                        originalColor.setSaturation(originalColor.getSaturation() * 0.5f);
                         mesh.addColor(originalColor);//(usingKinect->getColorAt(x,y));
                        /* if(kinectIndex==1){
                             mesh.addColor(ofColor(255,0,0));
@@ -358,23 +373,7 @@ void ofApp::drawPointCloud(int kinectIndex)
                         //corners.push_back(newPoint + dVertex[i]);
                         mesh.addVertex(newPoint + dVertex[i]);
                     }
-                    /*
-                    mesh.addVertex(corners[0]);
-                    mesh.addVertex(corners[1]);
-                    mesh.addVertex(corners[1]);
-                    mesh.addVertex(corners[2]);
-                    mesh.addVertex(corners[2]);
-                    mesh.addVertex(corners[0]);
-                    
-                    mesh.addVertex(corners[1]);
-                    mesh.addVertex(corners[3]);
-                    mesh.addVertex(corners[3]);
-                    mesh.addVertex(corners[2]);
-                    mesh.addVertex(corners[2]);
-                    mesh.addVertex(corners[1]);
-                    */
                     mesh.addTriangle(index+0, index+1, index+2);
-                    //mesh.add
                     mesh.addTriangle(index+1, index+3, index+2);
                     index += 4;
                 }
@@ -388,6 +387,7 @@ void ofApp::drawPointCloud(int kinectIndex)
         }
     }
     
+    firstRun = true;
     bInitCellsOnce = false;
     
     glPointSize(2);
@@ -396,7 +396,7 @@ void ofApp::drawPointCloud(int kinectIndex)
     ofScale(1, -1, -1);
     ofTranslate(0, 0, -1000); // center the points a bit
     ofEnableDepthTest();
-    //mesh.drawVertices();
+//    mesh.drawVertices();
     mesh.drawFaces();//drawTriangles();
     ofDisableDepthTest();
     ofPopMatrix();
