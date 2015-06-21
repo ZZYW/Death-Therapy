@@ -31,6 +31,7 @@ class ofApp : public ofBaseApp
 	void drawScene();
     void drawPointCloud(int kinectIndex);
     void guiEvent(ofxUIEventArgs &e);
+//    void audioOut(float * input, int bufferSize, int nChannels);
 	
 	void keyPressed(int key);
 	void keyReleased(int key);
@@ -68,6 +69,19 @@ class ofApp : public ofBaseApp
     
     ofxUICanvas *gui;
     
+    
+    //sound
+    ofSoundStream noiseSoundStream;
+    
+    float userFreq;
+    float userPwm;
+    
+    float freq;
+    float pwm;
+    float phase;
+    
+    vector<float> buf;
+    float noiseSeed;
     
     
     

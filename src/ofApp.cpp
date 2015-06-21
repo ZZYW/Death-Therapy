@@ -1,16 +1,22 @@
 #include "ofApp.h"
 
 //--------------------------------------------------------------
+
+int bufSize = 512;
+int sampleRate = 44100;
+float volume = 1;
+bool receiveOscData;
+
 void ofApp::setup()
 {
-	ofBackground(0);
+	ofBackground(255);
+    ofEnableSmoothing();
 	ofSetLogLevel( OF_LOG_VERBOSE );
 	ofSetVerticalSync( true );
-	showOverlay = false;
 	predictive = true;
 //	ofHideCursor();
 	oculusRift.baseCamera = &cam;
-    //oculusRift.setup();
+//    oculusRift.setup();
 	
 	cam.begin();
 	cam.end();
@@ -26,14 +32,28 @@ void ofApp::setup()
     
     oscReceiver.setup(PORT);
     
+//    userFreq = 100.0;
+//    userPwm = 0.5;
+//    noiseSeed = 0.0;
+//    freq = userFreq;
+//    pwm = userPwm;
+//    phase = 0.0;
+//    buf.resize(bufSize);
+//    noiseSoundStream.setup(this, 1, 0, sampleRate, bufSize, 4);
+    
+    
     gui = new ofxUICanvas();
-    gui->addSlider("BACKGROUND", 0.0, 255.0,100.0);
-    gui->addSlider("MELLOWREADING", 0.0, 1.0, 0.0);
-    gui->addSlider("KINECTSEPERATION", -2000.0, 2000.0, 0.0);
-
+    gui->setTheme(5);
+    gui->setColorBack(ofColor(255));
+    gui->addFPS();
+    gui->addSlider("MELLOW READING", 0.0, 1.0, &mellowReading);
+    gui->addSlider("KINECT SEPERATION", -2000.0, 2000.0, 0.0);
+    gui->addSlider("QUAD SIZE",1.0,10.0,2.0);
+    gui->addToggle("RECEIVE OSC DATA", true);
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent, this, &ofApp::guiEvent);
     gui->loadSettings("settings.xml");
+    
 }
 
 
@@ -44,45 +64,27 @@ void ofApp::update()
 #ifdef USE_TWO_KINECTS
     kinect2.update();
 #endif
+    
     //OSC
-    while(oscReceiver.hasWaitingMessages()){
-        ofxOscMessage m;
-        oscReceiver.getNextMessage(&m);
-        if(m.getAddress() =="/muse/elements/experimental/mellow"){
-            mellowReading = m.getArgAsFloat(0);
-            cout<<mellowReading<<endl;
+    if(receiveOscData){
+        while(oscReceiver.hasWaitingMessages()){
+            ofxOscMessage m;
+            oscReceiver.getNextMessage(&m);
+            if(m.getAddress() =="/muse/elements/experimental/mellow"){
+                mellowReading = m.getArgAsFloat(0);
+            }
         }
     }
+
+    userFreq = ofMap(mellowReading, 0, 1, 1, 2000);
+    userPwm = ofMap(mellowReading, 0, 1, 0, 1);
+    
 }
 //--------------------------------------------------------------
 void ofApp::draw()
 {
 	
 	if(oculusRift.isSetup()){
-		
-		if(showOverlay){
-			
-			oculusRift.beginOverlay(-230, 320,240);
-			ofRectangle overlayRect = oculusRift.getOverlayRectangle();
-			
-			ofPushStyle();
-			ofEnableAlphaBlending();
-			ofFill();
-			ofSetColor(255, 40, 10, 200);
-			
-			ofRect(overlayRect);
-			
-			ofSetColor(255,255);
-			ofFill();
-			ofDrawBitmapString("ofxOculusRift by\nAndreas Muller\nJames George\nJason Walters\nElie Zananiri\nFPS:"+ofToString(ofGetFrameRate())+"\nPredictive Tracking " + (oculusRift.getUsePredictiveOrientation() ? "YES" : "NO"), 40, 40);
-            
-            ofSetColor(0, 255, 0);
-            ofNoFill();
-            ofCircle(overlayRect.getCenter(), 20);
-			
-			ofPopStyle();
-			oculusRift.endOverlay();
-		}
         
         ofSetColor(255);
 		glEnable(GL_DEPTH_TEST);
@@ -108,7 +110,8 @@ void ofApp::draw()
 	
 }
 
-const int Step = 2;//50;//2;//20;//2;
+float quadSize = 2;
+const int Step = 4;//50;//2;//20;//2;
 const int Width = 640;
 const int Height = 480;
 const int XCellCount = Width / Step;
@@ -126,15 +129,57 @@ float kinectSeperation = 0;
 
 
 //--------------------------------------------------------------
+/*
+void ofApp::audioOut(float * output, int bufferSize, int nChannels){
+    for (int i=0; i<bufferSize; i++) {
+        //freq smoothly reaches userFreq
+        freq += ( userFreq - freq ) * 0.001;
+        //pwm smoothly reaches userPwm
+        pwm += ( userPwm - pwm ) * 0.001;
+        
+        //Change phase, and push it into [0, 1] range
+        phase += freq / sampleRate;
+        phase = fmodf( phase, 1.0 );
+        
+        //Calculate the output audio sample value
+        //Instead of 1 and 0 we use 1 and -1 output values
+        //for the sound wave to be symmetrical along y-axe
+        float v = ( phase < pwm ) ? 1.0 : -1.0;
+        
+        noiseSeed+=0.01;
+        
+        v = ofMap(ofNoise(noiseSeed), 0, 1, -1.0, 1.0);
+        
+        //Set the computed value to the left and the right
+        //channels of output buffer,
+        //also using global volume value defined above
+        output[ i*2 ] = output[ i*2 + 1 ] = v * volume; //but i still don't understand?!
+        //        output[i]=v*volume;
+        //        cout<<i<<endl;
+        //why the hell use i * 2 ?? and why use two equals??
+        
+        //Set the value to buffer buf, used for rendering
+        //on the screen
+        //Note: bufferSize can occasionally differ from bufSize
+        if ( i < bufSize ) {
+            buf[ i ] = v;
+        }
+    }
+}
+ */
+
+//--------------------------------------------------------------
 void ofApp::drawScene()
 {
+    
     ofPushMatrix();
     //drawPointCloud();
     for(int kinectIndex = 0; kinectIndex < KinectCount; kinectIndex++)
     {
         ofPushMatrix();
-        
+        ofEnableBlendMode(OF_BLENDMODE_ALPHA);
         drawPointCloud(kinectIndex);
+        ofDisableBlendMode();
         ofPopMatrix();
     }
     ofPopMatrix();
@@ -142,17 +187,17 @@ void ofApp::drawScene()
 
 //-------------------------------------------------------------
 
-
 ofVec3f randomWalk(ofVec3f before, float scalar)
 {
     ofVec3f noise = ofVec3f(
         ofNoise(ofGetElapsedTimef() + before.x),
         ofNoise(ofGetElapsedTimef() + before.y),
         ofNoise(ofGetElapsedTimef() + before.z));
+    
     noise = (noise - 0.5f) * 2.0f; //[0,1] --> [-1,+1]
     noise = noise.getNormalized();
     
-    float moveAmount =50.0f *scalar;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
+    float moveAmount = 50.0f *scalar;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
     before += noise * moveAmount;
     return before;
 }
@@ -172,7 +217,7 @@ ofVec3f moveToward(ofVec3f before, ofVec3f destination)
 
 void ofApp::drawPointCloud(int kinectIndex)
 {
-    if (kinectIndex == 1)
+    if (kinectIndex == 1) //the second kinect
     {
         ofTranslate(0,0, kinectSeperation);
         ofRotateY(180);
@@ -183,22 +228,14 @@ void ofApp::drawPointCloud(int kinectIndex)
     int w = Width;//640;
     int h = Height;//480;
     ofMesh mesh;
+//    mesh.setMode(OF_PRIMITIVE_POINTS);
     mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-    //mesh.setMode(OF_PRIMITIVE_LINES);
-    //OF_PRIMITIVE_LINE_LOOP);//OF_PRIMITIVE_TRIANGLES);//OF_PRIMITIVE_POINTS);
+//    mesh.setMode(OF_PRIMITIVE_LINE_LOOP);
+    
     int step = Step;//2;//10;
     const float MellowThreshold = 0.95f;//0.5f;
     
     bool bFocused = (mellowReading > MellowThreshold);//0.5f);
-    /*if (bFocused)
-    {
-        printf("FOCUSED!\n");
-    }
-    else
-    {
-        printf("NOT FOCUSED!\n");
-    }*/
-    
     
     if (frameCounter  < 100)
     {
@@ -221,7 +258,7 @@ void ofApp::drawPointCloud(int kinectIndex)
     int index = 0;
     for(int y = 0, iy=0; y < h; y += step, iy++) {
         for(int x = 0, ix=0; x < w; x += step, ix++) {
-            //if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 1400)
+            if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 1400)
             {
                 ofVec3f focusedPoint = usingKinect->getWorldCoordinateAt(x, y);
                 ofVec3f oldPoint = oldPoints[ix][iy][kinectIndex];
@@ -265,32 +302,26 @@ void ofApp::drawPointCloud(int kinectIndex)
                 //if((kinectDistance > 0 ) && (kinectDistance < 1400))
                 if((kinectDistance > 0 ))
                 {
-                    //mesh.addVertex(newPoint);
-                    float dr = 2;//0;//20;//2; //similar to pointsize
                     ofVec3f dVertex[4] = {
-                        ofVec3f(-dr, -dr, 0),
-                        ofVec3f(+dr, -dr, 0),
+                        ofVec3f(-quadSize, -quadSize, 0),
+                        ofVec3f(+quadSize, -quadSize, 0),
                         
-                        ofVec3f(-dr, +dr, 0),
-                        ofVec3f(+dr, +dr, 0)
+                        ofVec3f(-quadSize, +quadSize, 0),
+                        ofVec3f(+quadSize, +quadSize, 0)
                         
                     };
-                    /*
-                    for(int i=0; i<2*3*2; i++)
-                    {
-                        mesh.addColor(kinect.getColorAt(x,y));
-                    }
-                    */
-                    
                     std::vector<ofVec3f> corners;
                     for (int i=0; i<4; i++)
                     {
-//                        mesh.addColor(usingKinect->getColorAt(x,y));
-                        if(kinectIndex==1){
+                        ofColor originalColor = usingKinect->getColorAt(x, y);
+                        originalColor.setBrightness(originalColor.getBrightness() * 2.0);
+//                        originalColor.setSaturation(originalColor.getSaturation() * 0.8f);
+                        mesh.addColor(originalColor);//(usingKinect->getColorAt(x,y));
+                       /* if(kinectIndex==1){
                             mesh.addColor(ofColor(255,0,0));
                         }else{
                             mesh.addColor(ofColor(0,255,0));
-                        }
+                        } */
                         //corners.push_back(newPoint + dVertex[i]);
                         mesh.addVertex(newPoint + dVertex[i]);
                     }
@@ -343,18 +374,24 @@ void ofApp::drawPointCloud(int kinectIndex)
 
 void ofApp::guiEvent(ofxUIEventArgs &e)
 {
-    if(e.getName()=="BACKGROUND"){
-        ofxUISlider *slider = e.getSlider();
-        ofBackground(slider->getScaledValue());
-    }
-    if(e.getName() == "MELLOWREADING"){
+
+    if(e.getName() == "MELLOW READING"){
         ofxUISlider *slider = e.getSlider();
         mellowReading = slider->getScaledValue();
     }
-    if(e.getName() == "KINECTSEPERATION"){
+    if(e.getName() == "KINECT SEPERATION"){
         ofxUISlider *slider = e.getSlider();
         kinectSeperation = slider->getScaledValue();
     }
+    if(e.getName() == "QUAD SIZE"){
+        ofxUISlider *slider = e.getSlider();
+        quadSize = slider->getScaledValue();
+    }
+    if(e.getName() == "RECEIVE OSC DATA"){
+        ofxUIToggle *toggle = e.getToggle();
+        receiveOscData = toggle->getValue();
+    }
+    
 }
 
 //--------------------------------------------------------------
@@ -374,9 +411,7 @@ void ofApp::keyPressed(int key)
 		oculusRift.lockView = !oculusRift.lockView;
 	}
 	
-	if(key == 'o'){
-		showOverlay = !showOverlay;
-	}
+
 	if(key == 'r'){
 		oculusRift.reset();
 		
