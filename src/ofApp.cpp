@@ -46,10 +46,27 @@ void ofApp::setup()
     gui->setTheme(5);
     gui->setColorBack(ofColor(255));
     gui->addFPS();
+    
+    gui->addSpacer();
+    gui->addLabel("EEG Reading");
     gui->addSlider("MELLOW READING", 0.0, 1.0, &mellowReading);
-    gui->addSlider("KINECT SEPERATION", -2000.0, 2000.0, 0.0);
-    gui->addSlider("QUAD SIZE",1.0,10.0,2.0);
     gui->addToggle("RECEIVE OSC DATA", true);
+    
+    gui->addSpacer();
+    gui->addLabel("CAMERA ADJUSTMENT");
+    gui->addSlider("CAMERA X", -1000.0, 1000.0,0.0);
+    gui->addSlider("CAMERA Y",-1000.0,1000.0,0.0);
+    gui->addSlider("CAMERA Z", -1000.0, 1000.0, 0.0);
+    
+    gui->addSpacer();
+    gui->addLabel("KINECT ADJUSTMENT");
+    gui->addSlider("KINECT TWO: X", -1000.0, 1000.0, 0.0);
+    gui->addSlider("KINECT TWO: Y", -1000.0, 1000.0, 0.0);
+    gui->addSlider("KINECT TWO: Z", -1000.0, 1000.0, 0.0);
+
+//    gui->addSlider("KINECT SEPERATION", -1000.0, 1000.0, 0.0);
+    gui->addSlider("QUAD SIZE",1.0,10.0,2.0);
+    
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent, this, &ofApp::guiEvent);
     gui->loadSettings("settings.xml");
@@ -58,13 +75,16 @@ void ofApp::setup()
 
 
 //--------------------------------------------------------------
+float cameraX = 522;
+float cameraY = 100;
+float cameraZ = -500;
+
 void ofApp::update()
 {
     kinect.update();
 #ifdef USE_TWO_KINECTS
     kinect2.update();
 #endif
-    
     //OSC
     if(receiveOscData){
         while(oscReceiver.hasWaitingMessages()){
@@ -75,7 +95,13 @@ void ofApp::update()
             }
         }
     }
-
+    
+    //Cam Position
+//    cam.setPosition(cameraX, cameraY, cameraZ);
+//    cout<<"Camera Position: X->"<<cam.getPosition().x<<"  Y->"<<cam.getPosition().y<<"  Z->"<<cam.getPosition().z<<endl;
+    
+    
+    //Sound
     userFreq = ofMap(mellowReading, 0, 1, 1, 2000);
     userPwm = ofMap(mellowReading, 0, 1, 0, 1);
     
@@ -111,7 +137,7 @@ void ofApp::draw()
 }
 
 float quadSize = 2;
-const int Step = 4;//50;//2;//20;//2;
+const int Step = 2;//50;//2;//20;//2;
 const int Width = 640;
 const int Height = 480;
 const int XCellCount = Width / Step;
@@ -125,7 +151,9 @@ int frameCounter = 0;
 #endif
 ofVec3f oldPoints[XCellCount][YCellCount][KinectCount];
 //TODO: add some per point noise data for concentration??
-float kinectSeperation = 0;
+float Kinect2X = 0;
+float Kinect2Y = 0;
+float Kinect2Z = 0;
 
 
 //--------------------------------------------------------------
@@ -187,17 +215,22 @@ void ofApp::drawScene()
 
 //-------------------------------------------------------------
 
-ofVec3f randomWalk(ofVec3f before, float scalar)
+ofVec3f randomWalk(ofVec3f before, float scalar, float mellowReading)
 {
-    ofVec3f noise = ofVec3f(
-        ofNoise(ofGetElapsedTimef() + before.x),
-        ofNoise(ofGetElapsedTimef() + before.y),
-        ofNoise(ofGetElapsedTimef() + before.z));
-    
-    noise = (noise - 0.5f) * 2.0f; //[0,1] --> [-1,+1]
+//    ofVec3f noise = ofVec3f(
+//        ofNoise(ofGetElapsedTimef() + before.x),
+//        ofNoise(ofGetElapsedTimef() + before.y),
+//        ofNoise(ofGetElapsedTimef() + before.z));
+//    
+//    noise = (noise - 0.5f) * 2.0f; //[0,1] --> [-1,+1]
+//    
+    float noiseStep = 2 * ofGetLastFrameTime();
+//    cout<<noiseStep<<endl;
+    ofVec3f noise = ofVec3f(ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep));
     noise = noise.getNormalized();
     
-    float moveAmount = 50.0f *scalar;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
+    float multiplier = ofMap(mellowReading, 0, 1, 5, 15);
+    float moveAmount = multiplier *scalar;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
     before += noise * moveAmount;
     return before;
 }
@@ -219,7 +252,8 @@ void ofApp::drawPointCloud(int kinectIndex)
 {
     if (kinectIndex == 1) //the second kinect
     {
-        ofTranslate(0,0, kinectSeperation);
+        ofTranslate(Kinect2X,Kinect2Y, Kinect2Z);
+//        ofTranslate(0,0,0);
         ofRotateY(180);
     }
     
@@ -269,14 +303,13 @@ void ofApp::drawPointCloud(int kinectIndex)
                     oldPoint = focusedPoint;
                 }
                 ofVec3f newPoint = oldPoint;
-                //if (lostConcentrationWithVariation(x,y, concentration, thresholdFromImage))
-                //if (true)
+
                 if (!bFocused)
                 {
                     float concentrationError = 1.0 - (mellowReading * (1.0f / MellowThreshold)); //[0, 0.5] --> [1, 0]
-                    float maxDist = concentrationError * 250.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
+                    float maxDist = concentrationError * 400.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
                     
-                    newPoint = randomWalk(oldPoint, concentrationError);
+                    newPoint = randomWalk(oldPoint, concentrationError, mellowReading);
                     //if (false)
                     {
                         float dist2 = (newPoint).squareDistance(focusedPoint);
@@ -379,9 +412,17 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         ofxUISlider *slider = e.getSlider();
         mellowReading = slider->getScaledValue();
     }
-    if(e.getName() == "KINECT SEPERATION"){
+    if(e.getName() == "KINECT TWO: X"){
         ofxUISlider *slider = e.getSlider();
-        kinectSeperation = slider->getScaledValue();
+        Kinect2X = slider->getScaledValue();
+    }
+    if(e.getName() == "KINECT TWO: Y"){
+        ofxUISlider *slider = e.getSlider();
+        Kinect2Y = slider->getScaledValue();
+    }
+    if(e.getName() == "KINECT TWO: Z"){
+        ofxUISlider *slider = e.getSlider();
+        Kinect2Z = slider->getScaledValue();
     }
     if(e.getName() == "QUAD SIZE"){
         ofxUISlider *slider = e.getSlider();
@@ -390,6 +431,18 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     if(e.getName() == "RECEIVE OSC DATA"){
         ofxUIToggle *toggle = e.getToggle();
         receiveOscData = toggle->getValue();
+    }
+    if(e.getName() == "CAMERA X"){
+        ofxUISlider *slider = e.getSlider();
+        cameraX = slider->getScaledValue();
+    }
+    if(e.getName() == "CAMERA Y"){
+        ofxUISlider *slider = e.getSlider();
+        cameraY = slider->getScaledValue();
+    }
+    if(e.getName() == "CAMERA Z"){
+        ofxUISlider *slider = e.getSlider();
+        cameraZ = slider->getScaledValue();
     }
     
 }
