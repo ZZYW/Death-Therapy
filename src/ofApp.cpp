@@ -14,12 +14,11 @@ bool receiveOscData;
 void ofApp::setup()
 {
     
-    leftSound.loadSound("The_Effects_Of_33.mp3");
     rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
     
     
-//    leftSound.play();
     rightSound.play();
+    rightSound.setLoop(true);
     
 	ofBackground(255);
     ofEnableSmoothing();
@@ -94,8 +93,7 @@ float cameraZ = -500;
 void ofApp::update()
 {
     
-    leftSound.setVolume(ofMap(mellowReading, 0, 1, 1, 0));
-    rightSound.setVolume(ofMap(mellowReading, 0, 1, 0, 1));
+
     
     
     kinect.update();
@@ -121,6 +119,13 @@ void ofApp::update()
     //Sound
     userFreq = ofMap(mellowReading, 0, 1, 1, 2000);
     userPwm = ofMap(mellowReading, 0, 1, 0, 1);
+    
+    
+    
+//    rightSound.setVolume(ofMap(mellowReading, 0, 1, 0, 1));
+    float mappedSpeed =ofMap(mellowReading, 0, 0.6, 0, 1);
+    if(mappedSpeed > 1)mappedSpeed=1;
+    rightSound.setSpeed(mappedSpeed);
     
 }
 //--------------------------------------------------------------
@@ -254,8 +259,8 @@ ofVec3f moveToward(ofVec3f before, ofVec3f destination)
     //    return destination;
     }
     
-    ofVec3f approachAmount = 0.25f * delta;//10.0f * delta.getNormalized(); //HACK
-    before += approachAmount;
+    ofVec3f approachAmount = 2 * delta;//10.0f * delta.getNormalized(); //HACK
+    before += approachAmount * ofGetLastFrameTime();
     return before;
 }
 
