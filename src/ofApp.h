@@ -8,11 +8,9 @@
 #include "ofxOsc.h"
 
 
-
-
 #define PORT 12345
 #define NUM_MSG_STRING 20
-#define USE_TWO_KINECTS
+//#define USE_TWO_KINECTS
 
 
 struct particleTarget {
@@ -65,7 +63,7 @@ class ofApp : public ofBaseApp
 
     
     ofxOscReceiver oscReceiver;
-    float mellowReading;
+    float sensorReading;
     
     
     ofxUICanvas *gui;

@@ -6,16 +6,12 @@ int bufSize = 512;
 int sampleRate = 44100;
 float volume = 1;
 bool receiveOscData;
-
-
-
-
+float breathReading;
 
 void ofApp::setup()
 {
     
     rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
-    
     
     rightSound.play();
     rightSound.setLoop(true);
@@ -42,16 +38,7 @@ void ofApp::setup()
 #endif
     
     oscReceiver.setup(PORT);
-    
-//    userFreq = 100.0;
-//    userPwm = 0.5;
-//    noiseSeed = 0.0;
-//    freq = userFreq;
-//    pwm = userPwm;
-//    phase = 0.0;
-//    buf.resize(bufSize);
-//    noiseSoundStream.setup(this, 1, 0, sampleRate, bufSize, 4);
-    
+
     
     gui = new ofxUICanvas();
     gui->setTheme(5);
@@ -60,7 +47,7 @@ void ofApp::setup()
     
     gui->addSpacer();
     gui->addLabel("EEG Reading");
-    gui->addSlider("MELLOW READING", 0.0, 1.0, &mellowReading);
+    gui->addSlider("SENSOR READING", 0.0, 1.0, &sensorReading);
     gui->addToggle("RECEIVE OSC DATA", true);
     
     gui->addSpacer();
@@ -73,7 +60,7 @@ void ofApp::setup()
     gui->addLabel("KINECT ADJUSTMENT");
     gui->addSlider("KINECT TWO: X", -1000.0, 1000.0, 0.0);
     gui->addSlider("KINECT TWO: Y", -1000.0, 1000.0, 0.0);
-    gui->addSlider("KINECT TWO: Z", -1000.0, 1000.0, 0.0);
+    gui->addSlider("KINECT TWO: Z", -3000.0, 3000.0, 0.0);
 
 //    gui->addSlider("KINECT SEPERATION", -1000.0, 1000.0, 0.0);
     gui->addSlider("QUAD SIZE",1.0,10.0,2.0);
@@ -90,12 +77,15 @@ float cameraX = 522;
 float cameraY = 100;
 float cameraZ = -500;
 
+
+float changeRate = 0.27;
+
+
+
+
 void ofApp::update()
 {
-    
 
-    
-    
     kinect.update();
 #ifdef USE_TWO_KINECTS
     kinect2.update();
@@ -105,25 +95,46 @@ void ofApp::update()
         while(oscReceiver.hasWaitingMessages()){
             ofxOscMessage m;
             oscReceiver.getNextMessage(&m);
-            if(m.getAddress() =="/muse/elements/experimental/mellow"){
-                mellowReading = m.getArgAsFloat(0);
+//            if(m.getAddress() =="/muse/elements/experimental/mellow"){
+//                sensorReading = m.getArgAsFloat(0);
+//            }
+            if(m.getAddress() =="/sensordata/breath"){
+                breathReading = m.getArgAsInt32(0);
+//                cout<<m.getArgAsInt32(0)<<endl;
             }
         }
     }
     
+    
+    //modify particles coherent by sensor reading
+    
+    
+    if(receiveOscData){
+        if(breathReading){
+            sensorReading += changeRate * ofGetLastFrameTime();
+        }else{
+            sensorReading -= changeRate * ofGetLastFrameTime();
+        }
+        
+    }
+
+    
+    if(sensorReading>1)sensorReading=1;
+    if(sensorReading<0)sensorReading=0;
+    
     //Cam Position
-//    cam.setPosition(cameraX, cameraY, cameraZ);
+    cam.setPosition(cameraX, cameraY, cameraZ);
 //    cout<<"Camera Position: X->"<<cam.getPosition().x<<"  Y->"<<cam.getPosition().y<<"  Z->"<<cam.getPosition().z<<endl;
     
     
     //Sound
-    userFreq = ofMap(mellowReading, 0, 1, 1, 2000);
-    userPwm = ofMap(mellowReading, 0, 1, 0, 1);
+    userFreq = ofMap(sensorReading, 0, 1, 1, 2000);
+    userPwm = ofMap(sensorReading, 0, 1, 0, 1);
     
     
     
-//    rightSound.setVolume(ofMap(mellowReading, 0, 1, 0, 1));
-    float mappedSpeed =ofMap(mellowReading, 0, 0.6, 0, 1);
+//    rightSound.setVolume(ofMap(sensorReading, 0, 1, 0, 1));
+    float mappedSpeed =ofMap(sensorReading, 0, 0.6, 1, 1);
     if(mappedSpeed > 1)mappedSpeed=1;
     rightSound.setSpeed(mappedSpeed);
     
@@ -177,47 +188,6 @@ float Kinect2X = 0;
 float Kinect2Y = 0;
 float Kinect2Z = 0;
 
-
-//--------------------------------------------------------------
-/*
-void ofApp::audioOut(float * output, int bufferSize, int nChannels){
-    for (int i=0; i<bufferSize; i++) {
-        //freq smoothly reaches userFreq
-        freq += ( userFreq - freq ) * 0.001;
-        //pwm smoothly reaches userPwm
-        pwm += ( userPwm - pwm ) * 0.001;
-        
-        //Change phase, and push it into [0, 1] range
-        phase += freq / sampleRate;
-        phase = fmodf( phase, 1.0 );
-        
-        //Calculate the output audio sample value
-        //Instead of 1 and 0 we use 1 and -1 output values
-        //for the sound wave to be symmetrical along y-axe
-        float v = ( phase < pwm ) ? 1.0 : -1.0;
-        
-        noiseSeed+=0.01;
-        
-        v = ofMap(ofNoise(noiseSeed), 0, 1, -1.0, 1.0);
-        
-        //Set the computed value to the left and the right
-        //channels of output buffer,
-        //also using global volume value defined above
-        output[ i*2 ] = output[ i*2 + 1 ] = v * volume; //but i still don't understand?!
-        //        output[i]=v*volume;
-        //        cout<<i<<endl;
-        //why the hell use i * 2 ?? and why use two equals??
-        
-        //Set the value to buffer buf, used for rendering
-        //on the screen
-        //Note: bufferSize can occasionally differ from bufSize
-        if ( i < bufSize ) {
-            buf[ i ] = v;
-        }
-    }
-}
- */
-
 //--------------------------------------------------------------
 void ofApp::drawScene()
 {
@@ -237,7 +207,7 @@ void ofApp::drawScene()
 //-------------------------------------------------------------
 bool firstRun = false;
 
-ofVec3f randomWalk(ofVec3f before, float scalar, float mellowReading, float individualVareity)
+ofVec3f randomWalk(ofVec3f before, float scalar, float sensorReading, float individualVareity)
 {
     
     float noiseStep = 2 * ofGetLastFrameTime();
@@ -245,7 +215,8 @@ ofVec3f randomWalk(ofVec3f before, float scalar, float mellowReading, float indi
     ofVec3f noise = ofVec3f(ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep));
     noise = noise.getNormalized();
     
-    float multiplier = ofMap(mellowReading, 0, 1, 5, 15);
+    float multiplier = ofMap(sensorReading, 0, 1, 5, 20);
+//    float multiplier = 10;
     float moveAmount = multiplier *scalar * individualVareity;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
     before += noise * moveAmount;
     return before;
@@ -283,9 +254,9 @@ void ofApp::drawPointCloud(int kinectIndex)
 //    mesh.setMode(OF_PRIMITIVE_LINE_LOOP);
     
     int step = Step;//2;//10;
-    const float MellowThreshold = 0.95f;//0.5f;
+    const float SensorThreshold = 0.95f;//0.5f;
     
-    bool bFocused = (mellowReading > MellowThreshold);//0.5f);
+    bool bFocused = (sensorReading > SensorThreshold);//0.5f);
     
     if (frameCounter  < 100)
     {
@@ -310,12 +281,10 @@ void ofApp::drawPointCloud(int kinectIndex)
     int particleCounter = 0;
     for(int y = 0, iy=0; y < h; y += step, iy++) {
         for(int x = 0, ix=0; x < w; x += step, ix++) {
-            if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 1400)
+            if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 3000)
             {
                 ofVec3f focusedPoint = usingKinect->getWorldCoordinateAt(x, y);
                 ofVec3f oldPoint = oldPoints[ix][iy][kinectIndex];
-                
-            
                 
                 if (bInitCellsOnce)
                 {//make sure we give good data on the first iteration!
@@ -326,10 +295,10 @@ void ofApp::drawPointCloud(int kinectIndex)
 
                 if (!bFocused)
                 {
-                    float concentrationError = 1.0 - (mellowReading * (1.0f / MellowThreshold)); //[0, 0.5] --> [1, 0]
-                    float maxDist = concentrationError * 400.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
+                    float concentrationError = 1.0 - (sensorReading * (1.0f / SensorThreshold)); //[0, 0.5] --> [1, 0]
+                    float maxDist = concentrationError * 2000.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
                     
-                    newPoint = randomWalk(oldPoint, concentrationError, mellowReading, 1);
+                    newPoint = randomWalk(oldPoint, concentrationError, sensorReading, 1);
                     //if (false)
                     {
                         float dist2 = (newPoint).squareDistance(focusedPoint);
@@ -413,9 +382,9 @@ void ofApp::drawPointCloud(int kinectIndex)
 void ofApp::guiEvent(ofxUIEventArgs &e)
 {
 
-    if(e.getName() == "MELLOW READING"){
+    if(e.getName() == "SENSOR READING"){
         ofxUISlider *slider = e.getSlider();
-        mellowReading = slider->getScaledValue();
+        sensorReading = slider->getScaledValue();
     }
     if(e.getName() == "KINECT TWO: X"){
         ofxUISlider *slider = e.getSlider();

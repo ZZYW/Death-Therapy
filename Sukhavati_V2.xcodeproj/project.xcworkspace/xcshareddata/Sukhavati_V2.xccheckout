@@ -26,7 +26,7 @@
 		<key>5546BCEED4D70F2CBB1FF98AFA83ECF26794FEB4</key>
 		<string>../..</string>
 		<key>7E804D925461714118DB355C65BC964B41D94376</key>
-		<string>../../../ofxUI</string>
+		<string>../../../../ofxUI</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>github.com:wangyangwang/Sukhavati-v2.git</string>

@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "src/ofApp.cpp"
-            timestampString = "456625104.014122"
+            timestampString = "457469094.930017"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "333"
-            endingLineNumber = "333"
+            startingLineNumber = "302"
+            endingLineNumber = "302"
             landmarkName = "ofApp::drawPointCloud(int kinectIndex)"
             landmarkType = "5">
          </BreakpointContent>
