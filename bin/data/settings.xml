@@ -1,45 +1,60 @@
 <Widget>
     <Kind>4</Kind>
     <Name>SENSOR READING</Name>
-    <Value>0.000000000</Value>
+    <Value>0.569999754</Value>
 </Widget>
 <Widget>
     <Kind>2</Kind>
     <Name>RECEIVE OSC DATA</Name>
-    <Value>1</Value>
+    <Value>0</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
     <Name>CAMERA X</Name>
-    <Value>487.684722900</Value>
+    <Value>-325.123199463</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
     <Name>CAMERA Y</Name>
-    <Value>1000.000000000</Value>
+    <Value>285.714385986</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
     <Name>CAMERA Z</Name>
-    <Value>1000.000000000</Value>
+    <Value>1527.093627930</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
-    <Name>KINECT TWO: X</Name>
-    <Value>64.039352417</Value>
+    <Name>KINECT POSITION X</Name>
+    <Value>-4.926085472</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
-    <Name>KINECT TWO: Y</Name>
-    <Value>-389.162536621</Value>
+    <Name>KINECT POSITION Y</Name>
+    <Value>-24.630546570</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
-    <Name>KINECT TWO: Z</Name>
-    <Value>-2201.970458984</Value>
+    <Name>KINECT POSITION Z</Name>
+    <Value>-1000.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>KINECT ROTATE X</Name>
+    <Value>0.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>KINECT ROTATE Y</Name>
+    <Value>0.000000000</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>KINECT ROTATE Z</Name>
+    <Value>0.000000000</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
     <Name>QUAD SIZE</Name>
-    <Value>1.798029542</Value>
+    <Value>1.000000000</Value>
 </Widget>

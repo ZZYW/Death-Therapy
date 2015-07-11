@@ -2,11 +2,21 @@
 
 //--------------------------------------------------------------
 
-int bufSize = 512;
-int sampleRate = 44100;
+
+
+ofMesh stillMesh;
+
+bool freezePointCloud = false;
+bool capturedLastMoment = false;
+bool startDecompose = false;
+
+
 float volume = 1;
 bool receiveOscData;
-float breathReading;
+
+
+float cameraXpos, cameraZpos;
+
 
 void ofApp::setup()
 {
@@ -38,7 +48,6 @@ void ofApp::setup()
 #endif
     
     oscReceiver.setup(PORT);
-
     
     gui = new ofxUICanvas();
     gui->setTheme(5);
@@ -52,17 +61,22 @@ void ofApp::setup()
     
     gui->addSpacer();
     gui->addLabel("CAMERA ADJUSTMENT");
-    gui->addSlider("CAMERA X", -1000.0, 1000.0,0.0);
-    gui->addSlider("CAMERA Y",-1000.0,1000.0,0.0);
-    gui->addSlider("CAMERA Z", -1000.0, 1000.0, 0.0);
+    gui->addSlider("CAMERA X", -2000.0, 2000.0,0.0);
+    gui->addSlider("CAMERA Y",-2000.0,2000.0,0.0);
+    gui->addSlider("CAMERA Z", -2000.0, 2000.0, 0.0);
     
     gui->addSpacer();
     gui->addLabel("KINECT ADJUSTMENT");
-    gui->addSlider("KINECT TWO: X", -1000.0, 1000.0, 0.0);
-    gui->addSlider("KINECT TWO: Y", -1000.0, 1000.0, 0.0);
-    gui->addSlider("KINECT TWO: Z", -3000.0, 3000.0, 0.0);
-
-//    gui->addSlider("KINECT SEPERATION", -1000.0, 1000.0, 0.0);
+    
+    gui->addSlider("KINECT POSITION X", -1000.0, 1000.0, 0.0);
+    gui->addSlider("KINECT POSITION Y", -1000.0, 1000.0, 0.0);
+    gui->addSlider("KINECT POSITION Z", -1000.0, 1000.0, -1000.0);
+    
+    gui->addSlider("KINECT ROTATE X", 0.0, 360.0, 0.0);
+    gui->addSlider("KINECT ROTATE Y", 0.0, 360.0, 0.0);
+    gui->addSlider("KINECT ROTATE Z", 0.0, 360.0, 0.0);
+    
+    
     gui->addSlider("QUAD SIZE",1.0,10.0,2.0);
     
     gui->autoSizeToFitWidgets();
@@ -78,8 +92,8 @@ float cameraY = 100;
 float cameraZ = -500;
 
 
-float changeRate = 0.27;
-
+float changeRate = 0.50; //increase
+float changeRate2 = 0.2;//decrease
 
 
 
@@ -98,42 +112,21 @@ void ofApp::update()
 //            if(m.getAddress() =="/muse/elements/experimental/mellow"){
 //                sensorReading = m.getArgAsFloat(0);
 //            }
-            if(m.getAddress() =="/sensordata/breath"){
-                breathReading = m.getArgAsInt32(0);
+//            if(m.getAddress() =="/sensordata/breath"){
+            if(m.getAddress() =="/meditation"){
+                sensorReading = m.getArgAsInt32(0);
 //                cout<<m.getArgAsInt32(0)<<endl;
             }
         }
     }
     
-    
-    //modify particles coherent by sensor reading
-    
-    
-    if(receiveOscData){
-        if(breathReading){
-            sensorReading += changeRate * ofGetLastFrameTime();
-        }else{
-            sensorReading -= changeRate * ofGetLastFrameTime();
-        }
-        
-    }
-
-    
     if(sensorReading>1)sensorReading=1;
     if(sensorReading<0)sensorReading=0;
     
-    //Cam Position
-    cam.setPosition(cameraX, cameraY, cameraZ);
-//    cout<<"Camera Position: X->"<<cam.getPosition().x<<"  Y->"<<cam.getPosition().y<<"  Z->"<<cam.getPosition().z<<endl;
+    //set camera position
+//    cam.setPosition(cameraX, cameraY, cameraZ);
+
     
-    
-    //Sound
-    userFreq = ofMap(sensorReading, 0, 1, 1, 2000);
-    userPwm = ofMap(sensorReading, 0, 1, 0, 1);
-    
-    
-    
-//    rightSound.setVolume(ofMap(sensorReading, 0, 1, 0, 1));
     float mappedSpeed =ofMap(sensorReading, 0, 0.6, 1, 1);
     if(mappedSpeed > 1)mappedSpeed=1;
     rightSound.setSpeed(mappedSpeed);
@@ -191,189 +184,78 @@ float Kinect2Z = 0;
 //--------------------------------------------------------------
 void ofApp::drawScene()
 {
-    
     ofPushMatrix();
-    for(int kinectIndex = 0; kinectIndex < KinectCount; kinectIndex++)
-    {
-        ofPushMatrix();
-        ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-        drawPointCloud(kinectIndex);
-        ofDisableBlendMode();
-        ofPopMatrix();
-    }
+    ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+    drawPointCloud();
+    ofDisableBlendMode();
     ofPopMatrix();
 }
 
 //-------------------------------------------------------------
-bool firstRun = false;
 
-ofVec3f randomWalk(ofVec3f before, float scalar, float sensorReading, float individualVareity)
-{
-    
-    float noiseStep = 2 * ofGetLastFrameTime();
-//    cout<<noiseStep<<endl;
-    ofVec3f noise = ofVec3f(ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep),ofRandom(-noiseStep,noiseStep));
-    noise = noise.getNormalized();
-    
-    float multiplier = ofMap(sensorReading, 0, 1, 5, 20);
-//    float multiplier = 10;
-    float moveAmount = multiplier *scalar * individualVareity;//20.0f * scalar;//100.0f * scalar;// 0.1f; //HACK
-    before += noise * moveAmount;
-    return before;
-}
+float pointCloudFarDistance = 1000;
+float kPosX, kPosY, kPosZ;
 
-ofVec3f moveToward(ofVec3f before, ofVec3f destination)
-{
-    ofVec3f delta = destination - before;
-    //if (delta.squareDistance(ofVec3f(0,0,0)) < 100.0f)
-    {
-    //    return destination;
-    }
+void ofApp::drawPointCloud() {
+    int w = 640;
+    int h = 480;
     
-    ofVec3f approachAmount = 2 * delta;//10.0f * delta.getNormalized(); //HACK
-    before += approachAmount * ofGetLastFrameTime();
-    return before;
-}
-
-void ofApp::drawPointCloud(int kinectIndex)
-{
-    if (kinectIndex == 1) //the second kinect
-    {
-        ofTranslate(Kinect2X,Kinect2Y, Kinect2Z);
-//        ofTranslate(0,0,0);
-        ofRotateY(180);
-    }
-    
-    
-    //int kinectIndex = 0; //TODO: pull kinect 1 in some cases!
-    int w = Width;//640;
-    int h = Height;//480;
-    ofMesh mesh;
-//    mesh.setMode(OF_PRIMITIVE_POINTS);
-    mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-//    mesh.setMode(OF_PRIMITIVE_LINE_LOOP);
-    
-    int step = Step;//2;//10;
-    const float SensorThreshold = 0.95f;//0.5f;
-    
-    bool bFocused = (sensorReading > SensorThreshold);//0.5f);
-    
-    if (frameCounter  < 100)
-    {
-        frameCounter++;
-        bInitCellsOnce = true;
-    }
-    else
-    {
-        bInitCellsOnce = false;
-    }
-    
-    ofxKinect *usingKinect = &kinect;
-    #ifdef USE_TWO_KINECTS
-    if (kinectIndex == 1)
-    {
-        usingKinect = &kinect2;
-    }
-    #endif
-    
-    
-    int index = 0;
-    int particleCounter = 0;
-    for(int y = 0, iy=0; y < h; y += step, iy++) {
-        for(int x = 0, ix=0; x < w; x += step, ix++) {
-            if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < 3000)
-            {
-                ofVec3f focusedPoint = usingKinect->getWorldCoordinateAt(x, y);
-                ofVec3f oldPoint = oldPoints[ix][iy][kinectIndex];
-                
-                if (bInitCellsOnce)
-                {//make sure we give good data on the first iteration!
-                    oldPoints[ix][iy][kinectIndex] = focusedPoint;
-                    oldPoint = focusedPoint;
-                }
-                ofVec3f newPoint = oldPoint;
-
-                if (!bFocused)
-                {
-                    float concentrationError = 1.0 - (sensorReading * (1.0f / SensorThreshold)); //[0, 0.5] --> [1, 0]
-                    float maxDist = concentrationError * 2000.0f;//100.0f;//2000.0f;//1.0f;//10.0f;
+    if(!freezePointCloud){
+        ofMesh mesh;
+        mesh.setMode(OF_PRIMITIVE_POINTS);
+        int step = 2;
+        for(int y = 0; y < h; y += step) {
+            for(int x = 0; x < w; x += step) {
+                if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < pointCloudFarDistance) {
                     
-                    newPoint = randomWalk(oldPoint, concentrationError, sensorReading, 1);
-                    //if (false)
-                    {
-                        float dist2 = (newPoint).squareDistance(focusedPoint);
-                        //if (dist2 <= maxDist * maxDist)
-                        if (dist2 >= maxDist * maxDist)
-                        {
-                            ofVec3f delta = (newPoint - focusedPoint).getNormalized() * maxDist;
-                            newPoint = focusedPoint + delta;
-                            //newPoint = focusedPoint + (focusedPoint - newPoint).getNormalized() * maxDist;
-                        }
-                    }
+                    ofColor originalColor = kinect.getColorAt(x, y);
+                    originalColor.setBrightness(originalColor.getBrightness() * 1.50);
+                    originalColor.setSaturation(originalColor.getSaturation() * 1.2f);
+                    mesh.addColor(originalColor);//(usingKinect->getColorAt(x,y));
+                    
+                    
+                    mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
                 }
-                else
-                {
-                    //newPoint = focusedPoint;
-                    //newPoint = (newPoint + focusedPoint) / 2.0f;
-                    newPoint = moveToward(oldPoint, focusedPoint);
-                }
-                //newPoint = focusedPoint;
-                
-                //if((kinect.getDistanceAt(x, y) > 0 )
-                float kinectDistance = usingKinect->getDistanceAt(x,y);
-                //if((kinectDistance > 0 ) && (kinectDistance < 1400))
-                if((kinectDistance > 0 ))
-                {
-                    ofVec3f dVertex[4] = {
-                        ofVec3f(-quadSize, -quadSize, 0),
-                        ofVec3f(+quadSize, -quadSize, 0),
-                        
-                        ofVec3f(-quadSize, +quadSize, 0),
-                        ofVec3f(+quadSize, +quadSize, 0)
-                        
-                    };
-                    std::vector<ofVec3f> corners;
-                    for (int i=0; i<4; i++)
-                    {
-                        ofColor originalColor = usingKinect->getColorAt(x, y);
-//                        originalColor.setBrightness(originalColor.getBrightness() * 1.50);
-//                        originalColor.setSaturation(originalColor.getSaturation() * 0.5f);
-                        mesh.addColor(originalColor);//(usingKinect->getColorAt(x,y));
-                       /* if(kinectIndex==1){
-                            mesh.addColor(ofColor(255,0,0));
-                        }else{
-                            mesh.addColor(ofColor(0,255,0));
-                        } */
-                        //corners.push_back(newPoint + dVertex[i]);
-                        mesh.addVertex(newPoint + dVertex[i]);
-                    }
-                    mesh.addTriangle(index+0, index+1, index+2);
-                    mesh.addTriangle(index+1, index+3, index+2);
-                    index += 4;
-                }
-                
-                oldPoints[ix][iy][kinectIndex] = newPoint;
-                //setOldPointAt(x,y,newPoint);
-                //mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-
-                
             }
         }
+        glPointSize(quadSize);
+        ofPushMatrix();
+        // the projected points are 'upside down' and 'backwards'
+        ofScale(1, -1, -1);
+        ofTranslate(kPosX  , kPosY, kPosZ); // center the points a bit
+        ofEnableDepthTest();
+        mesh.drawVertices();
+        ofDisableDepthTest();
+        ofPopMatrix();
+    }else{
+        if(!capturedLastMoment){
+            stillMesh.setMode(OF_PRIMITIVE_POINTS);
+            int step = 2;
+            for(int y = 0; y < h; y += step) {
+                for(int x = 0; x < w; x += step) {
+                    if(kinect.getDistanceAt(x, y) > 0 && kinect.getDistanceAt(x, y) < pointCloudFarDistance) {
+                        
+                        ofColor originalColor = kinect.getColorAt(x, y);
+                        originalColor.setBrightness(originalColor.getBrightness() * 1.50);
+                        originalColor.setSaturation(originalColor.getSaturation() * 1.2f);
+                        stillMesh.addColor(originalColor);
+                        stillMesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                    }
+                }
+            }
+            capturedLastMoment = true;
+        }else{
+            glPointSize(quadSize);
+            ofPushMatrix();
+            ofScale(1, -1, -1);
+            ofTranslate(kPosX  , kPosY, kPosZ); // center the points a bit
+            ofEnableDepthTest();
+            stillMesh.drawVertices();
+            ofDisableDepthTest();
+            ofPopMatrix();
+        }
     }
-    
-    firstRun = true;
-    bInitCellsOnce = false;
-    
-    glPointSize(2);
-    ofPushMatrix();
-    // the projected points are 'upside down' and 'backwards'
-    ofScale(1, -1, -1);
-    ofTranslate(0, 0, -1000); // center the points a bit
-    ofEnableDepthTest();
-//    mesh.drawVertices();
-    mesh.drawFaces();//drawTriangles();
-    ofDisableDepthTest();
-    ofPopMatrix();
+
 }
 //--------------------------------------------------------------
 
@@ -385,18 +267,6 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     if(e.getName() == "SENSOR READING"){
         ofxUISlider *slider = e.getSlider();
         sensorReading = slider->getScaledValue();
-    }
-    if(e.getName() == "KINECT TWO: X"){
-        ofxUISlider *slider = e.getSlider();
-        Kinect2X = slider->getScaledValue();
-    }
-    if(e.getName() == "KINECT TWO: Y"){
-        ofxUISlider *slider = e.getSlider();
-        Kinect2Y = slider->getScaledValue();
-    }
-    if(e.getName() == "KINECT TWO: Z"){
-        ofxUISlider *slider = e.getSlider();
-        Kinect2Z = slider->getScaledValue();
     }
     if(e.getName() == "QUAD SIZE"){
         ofxUISlider *slider = e.getSlider();
@@ -418,6 +288,18 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         ofxUISlider *slider = e.getSlider();
         cameraZ = slider->getScaledValue();
     }
+    if(e.getName() == "KINECT POSITION X"){
+        ofxUISlider *slider = e.getSlider();
+        kPosX = slider->getScaledValue();
+    }
+    if(e.getName() == "KINECT POSITION Y"){
+        ofxUISlider *slider = e.getSlider();
+        kPosY = slider->getScaledValue();
+    }
+    if(e.getName() == "KINECT POSITION Z"){
+        ofxUISlider *slider = e.getSlider();
+        kPosZ = slider->getScaledValue();
+    }
     
 }
 
@@ -431,7 +313,8 @@ void ofApp::keyPressed(int key)
 	}
 	
 	if(key == 's'){
-		oculusRift.reloadShader();
+//		oculusRift.reloadShader();
+        freezePointCloud = true;
 	}
 	
 	if(key == 'l'){
@@ -441,14 +324,18 @@ void ofApp::keyPressed(int key)
 
 	if(key == 'r'){
 		oculusRift.reset();
-		
 	}
+    
 	if(key == 'h'){
 		ofHideCursor();
 	}
 	if(key == 'H'){
 		ofShowCursor();
 	}
+    
+    if(key == 'g'){
+        gui->toggleVisible();
+    }
 	
 	if(key == 'p'){
 		predictive = !predictive;

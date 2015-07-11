@@ -8,7 +8,7 @@
 #include "ofxOsc.h"
 
 
-#define PORT 12345
+#define PORT 4444
 #define NUM_MSG_STRING 20
 //#define USE_TWO_KINECTS
 
@@ -28,7 +28,7 @@ class ofApp : public ofBaseApp
     void exit();
 	
 	void drawScene();
-    void drawPointCloud(int kinectIndex);
+    void drawPointCloud();//(int kinectIndex);
     void guiEvent(ofxUIEventArgs &e);
 //    void audioOut(float * input, int bufferSize, int nChannels);
 	
@@ -88,7 +88,7 @@ class ofApp : public ofBaseApp
     ofSoundPlayer rightSound;
 
     
-    
+    bool hideGUI;
     
     
     
