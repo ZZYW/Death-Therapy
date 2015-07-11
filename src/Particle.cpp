@@ -7,21 +7,23 @@
 //
 
 #include "Particle.h"
-Particle::Particle(ofVec3f _location){
+Particle::Particle(ofVec3f _location, ofColor c){
     acceleration = ofVec3f(0,0,0);
     velocity = ofVec3f(0,0,0);
     location = _location;
-    maxspeed = ofRandom(3,10);
+    maxspeed = ofRandom(1000,10000);
     //    maxspeed = 20;
-    maxforce = ofRandom(0.1,0.4);
+    maxforce = ofRandom(0.04,0.4);
     //    maxforce = 10;
     target_assigned = false;
+    color = c;
+    flyThreshold = ofRandom(0,100);
 }
 
 void Particle::update(){
     velocity += acceleration;
     velocity.limit(maxspeed);
-    location += velocity;
+    location += velocity  * ofGetLastFrameTime();
     acceleration = acceleration * 0;
 }
 

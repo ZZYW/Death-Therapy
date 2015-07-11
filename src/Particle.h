@@ -17,7 +17,7 @@ class Particle {
 public:
     
     //constructor
-    Particle(ofVec3f _location);
+    Particle(ofVec3f _location, ofColor _c);
     
     //Methods
     void update();
@@ -29,9 +29,11 @@ public:
     ofVec3f location;
     ofVec3f velocity;
     ofVec3f acceleration;
+    ofColor color;
     float maxforce;
     float maxspeed;
     bool target_assigned;
+    float flyThreshold;
     //tail
     //  vector<ofVec3f> history;
     

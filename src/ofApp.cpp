@@ -4,19 +4,26 @@
 
 
 
-ofMesh stillMesh;
 
 bool freezePointCloud = false;
 bool capturedLastMoment = false;
 bool startDecompose = false;
 
+bool startRising = false;
 
 float volume = 1;
 bool receiveOscData;
 
+float cameraX = 522;
+float cameraY = 100;
+float cameraZ = -500;
+
+
 
 float cameraXpos, cameraZpos;
 
+
+vector<Particle> stillPointCloud;
 
 void ofApp::setup()
 {
@@ -61,16 +68,16 @@ void ofApp::setup()
     
     gui->addSpacer();
     gui->addLabel("CAMERA ADJUSTMENT");
-    gui->addSlider("CAMERA X", -2000.0, 2000.0,0.0);
-    gui->addSlider("CAMERA Y",-2000.0,2000.0,0.0);
-    gui->addSlider("CAMERA Z", -2000.0, 2000.0, 0.0);
+    gui->addSlider("CAMERA X", -2000.0, 2000.0,&cameraX);
+    gui->addSlider("CAMERA Y",-2000.0,2000.0,&cameraY);
+    gui->addSlider("CAMERA Z", -2000.0, 2000.0, &cameraZ);
     
     gui->addSpacer();
     gui->addLabel("KINECT ADJUSTMENT");
     
     gui->addSlider("KINECT POSITION X", -1000.0, 1000.0, 0.0);
     gui->addSlider("KINECT POSITION Y", -1000.0, 1000.0, 0.0);
-    gui->addSlider("KINECT POSITION Z", -1000.0, 1000.0, -1000.0);
+    gui->addSlider("KINECT POSITION Z", -5000.0, 5000.0, -1000.0);
     
     gui->addSlider("KINECT ROTATE X", 0.0, 360.0, 0.0);
     gui->addSlider("KINECT ROTATE Y", 0.0, 360.0, 0.0);
@@ -87,9 +94,6 @@ void ofApp::setup()
 
 
 //--------------------------------------------------------------
-float cameraX = 522;
-float cameraY = 100;
-float cameraZ = -500;
 
 
 float changeRate = 0.50; //increase
@@ -124,7 +128,12 @@ void ofApp::update()
     if(sensorReading<0)sensorReading=0;
     
     //set camera position
-//    cam.setPosition(cameraX, cameraY, cameraZ);
+    
+    if(startRising){
+        cameraY += 0.5;
+    }
+    
+    cam.setPosition(cameraX, cameraY, cameraZ);
 
     
     float mappedSpeed =ofMap(sensorReading, 0, 0.6, 1, 1);
@@ -196,6 +205,8 @@ void ofApp::drawScene()
 float pointCloudFarDistance = 1000;
 float kPosX, kPosY, kPosZ;
 
+int scatterIndicator = 0;
+
 void ofApp::drawPointCloud() {
     int w = 640;
     int h = 480;
@@ -228,6 +239,11 @@ void ofApp::drawPointCloud() {
         ofDisableDepthTest();
         ofPopMatrix();
     }else{
+        
+        
+        ofMesh stillMesh;
+        
+        
         if(!capturedLastMoment){
             stillMesh.setMode(OF_PRIMITIVE_POINTS);
             int step = 2;
@@ -238,8 +254,7 @@ void ofApp::drawPointCloud() {
                         ofColor originalColor = kinect.getColorAt(x, y);
                         originalColor.setBrightness(originalColor.getBrightness() * 1.50);
                         originalColor.setSaturation(originalColor.getSaturation() * 1.2f);
-                        stillMesh.addColor(originalColor);
-                        stillMesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                        stillPointCloud.push_back(Particle(kinect.getWorldCoordinateAt(x, y),originalColor));
                     }
                 }
             }
@@ -250,11 +265,31 @@ void ofApp::drawPointCloud() {
             ofScale(1, -1, -1);
             ofTranslate(kPosX  , kPosY, kPosZ); // center the points a bit
             ofEnableDepthTest();
+            
+            
+            if(ofGetFrameNum() % 100 == 0 && scatterIndicator < 100){
+                scatterIndicator++;
+            }
+            
+       
+            
+            for(int i=0;i<stillPointCloud.size()-1;i++){
+                
+                if(stillPointCloud[i].flyThreshold < scatterIndicator){
+                    stillPointCloud[i].update();
+                    stillPointCloud[i].seek(stillPointCloud[i].location + ofVec3f(ofRandom(-1,1),ofRandom(-1,1),ofRandom(-1,1)));
+                }
+
+                stillMesh.addColor(stillPointCloud[i].color);
+                stillMesh.addVertex(stillPointCloud[i].location);
+            }
+            
             stillMesh.drawVertices();
             ofDisableDepthTest();
             ofPopMatrix();
         }
     }
+    
 
 }
 //--------------------------------------------------------------
@@ -323,7 +358,8 @@ void ofApp::keyPressed(int key)
 	
 
 	if(key == 'r'){
-		oculusRift.reset();
+//		oculusRift.reset();
+        startRising = true;
 	}
     
 	if(key == 'h'){

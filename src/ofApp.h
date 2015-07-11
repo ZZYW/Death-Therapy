@@ -6,6 +6,7 @@
 #include "ofxOculusDK2.h"
 #include "ofxKinect.h"
 #include "ofxOsc.h"
+#include "Particle.h"
 
 
 #define PORT 4444
