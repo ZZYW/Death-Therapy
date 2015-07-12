@@ -30,6 +30,7 @@ void ofApp::setup()
     
     rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
     
+    
     rightSound.play();
     rightSound.setLoop(true);
     
@@ -63,7 +64,7 @@ void ofApp::setup()
     
     gui->addSpacer();
     gui->addLabel("EEG Reading");
-    gui->addSlider("SENSOR READING", 0.0, 1.0, &sensorReading);
+    gui->addSlider("SENSOR READING", 0.0, 100.0, &sensorReading);
     gui->addToggle("RECEIVE OSC DATA", true);
     
     gui->addSpacer();
@@ -118,28 +119,31 @@ void ofApp::update()
 //            }
 //            if(m.getAddress() =="/sensordata/breath"){
             if(m.getAddress() =="/meditation"){
-                sensorReading = m.getArgAsInt32(0);
-//                cout<<m.getArgAsInt32(0)<<endl;
+//                sensorReading = m.getArgAsInt32(0);
+                 sensorReading = m.getArgAsFloat(0);
+                
             }
         }
     }
     
-    if(sensorReading>1)sensorReading=1;
-    if(sensorReading<0)sensorReading=0;
-    
+
     //set camera position
+    
+    
+    
     
     if(startRising){
         cameraY += 0.5;
     }
     
+    
+    
+    
     cam.setPosition(cameraX, cameraY, cameraZ);
 
     
-    float mappedSpeed =ofMap(sensorReading, 0, 0.6, 1, 1);
-    if(mappedSpeed > 1)mappedSpeed=1;
-    rightSound.setSpeed(mappedSpeed);
-    
+    cout<<sensorReading<<endl;
+    //sensor reading range (0 - 100)
 }
 //--------------------------------------------------------------
 void ofApp::draw()
@@ -275,11 +279,15 @@ void ofApp::drawPointCloud() {
             
             for(int i=0;i<stillPointCloud.size()-1;i++){
                 
-                if(stillPointCloud[i].flyThreshold < scatterIndicator){
-                    stillPointCloud[i].update();
-                    stillPointCloud[i].seek(stillPointCloud[i].location + ofVec3f(ofRandom(-1,1),ofRandom(-1,1),ofRandom(-1,1)));
+                
+                if(startDecompose){
+                    if(stillPointCloud[i].flyThreshold < scatterIndicator){
+                        stillPointCloud[i].update();
+                        stillPointCloud[i].seek(stillPointCloud[i].location + ofVec3f(ofRandom(-10,10),ofRandom(-10,10),ofRandom(-10,10)));
+                    }
                 }
-
+                
+                
                 stillMesh.addColor(stillPointCloud[i].color);
                 stillMesh.addVertex(stillPointCloud[i].location);
             }
@@ -352,6 +360,10 @@ void ofApp::keyPressed(int key)
         freezePointCloud = true;
 	}
 	
+    if(key == 'd'){
+        startDecompose = true;
+    }
+    
 	if(key == 'l'){
 		oculusRift.lockView = !oculusRift.lockView;
 	}

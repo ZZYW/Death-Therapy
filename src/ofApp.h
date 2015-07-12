@@ -9,7 +9,7 @@
 #include "Particle.h"
 
 
-#define PORT 4444
+#define PORT 7771
 #define NUM_MSG_STRING 20
 //#define USE_TWO_KINECTS
 
@@ -87,6 +87,8 @@ class ofApp : public ofBaseApp
     
     ofSoundPlayer leftSound;
     ofSoundPlayer rightSound;
+    
+    ofSoundPlayer startMusic;
 
     
     bool hideGUI;
