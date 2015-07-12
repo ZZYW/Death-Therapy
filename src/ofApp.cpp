@@ -18,9 +18,10 @@ float cameraX = 522;
 float cameraY = 100;
 float cameraZ = -500;
 
-
-
 float cameraXpos, cameraZpos;
+
+float cameraRotationX;
+
 
 
 vector<Particle> stillPointCloud;
@@ -30,11 +31,10 @@ void ofApp::setup()
     
     rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
     
-    
     rightSound.play();
     rightSound.setLoop(true);
     
-	ofBackground(255);
+	ofBackground(0);
     ofEnableSmoothing();
 	ofSetLogLevel( OF_LOG_VERBOSE );
 	ofSetVerticalSync( true );
@@ -73,6 +73,8 @@ void ofApp::setup()
     gui->addSlider("CAMERA Y",-2000.0,2000.0,&cameraY);
     gui->addSlider("CAMERA Z", -2000.0, 2000.0, &cameraZ);
     
+//    gui->addSlider("CAMERA ROTATION X", 0, 360, &cameraRotationX);
+    
     gui->addSpacer();
     gui->addLabel("KINECT ADJUSTMENT");
     
@@ -101,6 +103,7 @@ float changeRate = 0.50; //increase
 float changeRate2 = 0.2;//decrease
 
 
+float cameraAcce = 0;
 
 void ofApp::update()
 {
@@ -130,10 +133,11 @@ void ofApp::update()
     //set camera position
     
     
-    
+    cameraAcce = ofMap(sensorReading, 0, 100, -0.5, 2);
+    cout<<cameraAcce<<endl;
     
     if(startRising){
-        cameraY += 0.5;
+        cameraY += cameraAcce;
     }
     
     

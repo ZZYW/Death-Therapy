@@ -1,12 +1,12 @@
 <Widget>
     <Kind>4</Kind>
     <Name>SENSOR READING</Name>
-    <Value>26.000000000</Value>
+    <Value>19.541887283</Value>
 </Widget>
 <Widget>
     <Kind>2</Kind>
     <Name>RECEIVE OSC DATA</Name>
-    <Value>1</Value>
+    <Value>0</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
@@ -16,7 +16,7 @@
 <Widget>
     <Kind>4</Kind>
     <Name>CAMERA Y</Name>
-    <Value>2582.214355469</Value>
+    <Value>2000.000000000</Value>
 </Widget>
 <Widget>
     <Kind>4</Kind>
