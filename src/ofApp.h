@@ -32,6 +32,9 @@ class ofApp : public ofBaseApp
     void drawPointCloud();//(int kinectIndex);
     void guiEvent(ofxUIEventArgs &e);
 //    void audioOut(float * input, int bufferSize, int nChannels);
+    
+    
+
 	
 	void keyPressed(int key);
 	void keyReleased(int key);

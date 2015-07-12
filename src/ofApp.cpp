@@ -24,6 +24,10 @@ float cameraXpos, cameraZpos;
 float cameraRotationX;
 
 
+bool fadeInRain = false;
+bool fadeOutRain = false;
+bool fadeInTransendance = false;
+
 
 vector<Particle> stillPointCloud;
 
@@ -32,21 +36,25 @@ void ofApp::setup()
     mourn.loadSound("rain.mp3");
     transcend.loadSound("transcendance.mp3");
     bowl.loadSound("bowlsinging.mp3");
-
+    
     mourn.play();
+    mourn.setVolume(0);
     mourn.setLoop(true);
     
-	ofBackground(0);
+    
+    transcend.setVolume(0);
+    
+    ofBackground(0);
     ofEnableSmoothing();
-	ofSetLogLevel( OF_LOG_VERBOSE );
-	ofSetVerticalSync( true );
-	predictive = true;
-//	ofHideCursor();
-	oculusRift.baseCamera = &cam;
-//    oculusRift.setup();
-	
-	cam.begin();
-	cam.end();
+    ofSetLogLevel( OF_LOG_VERBOSE );
+    ofSetVerticalSync( true );
+    predictive = true;
+    //	ofHideCursor();
+    oculusRift.baseCamera = &cam;
+        oculusRift.setup();
+    
+    cam.begin();
+    cam.end();
     
     kinect.setRegistration(true);
     kinect.init();
@@ -75,7 +83,7 @@ void ofApp::setup()
     gui->addSlider("CAMERA Y",-2000.0,2000.0,&cameraY);
     gui->addSlider("CAMERA Z", -2000.0, 2000.0, &cameraZ);
     
-//    gui->addSlider("CAMERA ROTATION X", 0, 360, &cameraRotationX);
+    //    gui->addSlider("CAMERA ROTATION X", 0, 360, &cameraRotationX);
     
     gui->addSpacer();
     gui->addLabel("KINECT ADJUSTMENT");
@@ -105,13 +113,22 @@ float changeRate = 0.50; //increase
 float changeRate2 = 0.2;//decrease
 
 
-float cameraAcce = 100;
+float cameraAcce = 300;
+float cameraYNew;
+
+float timeMark = 0;
+float risingCooldownTime = 10;
+bool risingCooldown = false;
+
 
 
 
 void ofApp::update()
 {
+    
+    
 
+    
     kinect.update();
 #ifdef USE_TWO_KINECTS
     kinect2.update();
@@ -121,70 +138,145 @@ void ofApp::update()
         while(oscReceiver.hasWaitingMessages()){
             ofxOscMessage m;
             oscReceiver.getNextMessage(&m);
-//            if(m.getAddress() =="/muse/elements/experimental/mellow"){
-//                sensorReading = m.getArgAsFloat(0);
-//            }
-//            if(m.getAddress() =="/sensordata/breath"){
+            //            if(m.getAddress() =="/muse/elements/experimental/mellow"){
+            //                sensorReading = m.getArgAsFloat(0);
+            //            }
+            //            if(m.getAddress() =="/sensordata/breath"){
             if(m.getAddress() =="/meditation"){
-//                sensorReading = m.getArgAsInt32(0);
-                 sensorReading = m.getArgAsFloat(0);
+                //                sensorReading = m.getArgAsInt32(0);
+                sensorReading = m.getArgAsFloat(0);
                 
             }
         }
     }
     
-
     
     
-    //trigger camera rise
-    if(sensorReading>50){
-        startRising = true;
-    }else{
-        startRising = false;
-    }
+    
+    if(startTranscend){
 
-    //set camera position
-    if(startRising){
-        float cameraYNew = cameraY + cameraAcce;
+        
+        
+        //trigger camera rise
+        if(sensorReading>50){
+            startRising = true;
+        }else{
+            startRising = false;
+        }
+        
+        //set camera position
+        if(startRising && !risingCooldown){
+            
+
+            
+            
+            
+            if(!risingCooldown){
+                cameraYNew = cameraY + cameraAcce;
+                bowl.play();
+                //set cool down
+                risingCooldown = true;
+                timeMark = ofGetElapsedTimef();
+            }
+            
+            
+            
+
+            
+        }
+        
+        
+        
+        
+        
+        
         if(cameraY<cameraYNew){
-            cameraY += 0.01;
+            cameraY += 0.5;
+        }
+        
+        
+        //reset cooldown when time passed 3 seconds
+        if(ofGetElapsedTimef() - timeMark > risingCooldownTime && timeMark != 0){
+            risingCooldown = false;
+            timeMark = 0;
+        }
+        
+        cout<<"camera Y target -> " << cameraYNew<<endl;
+
+        
+    }
+    
+    
+    
+    cam.setPosition(cameraX, cameraY, cameraZ);
+    
+    
+    
+    
+    if(fadeInTransendance){
+        if(transcend.getVolume() < 1){
+            float vol = transcend.getVolume();
+            vol += 0.0006;
+            transcend.setVolume(vol);
         }
     }
     
-    cam.setPosition(cameraX, cameraY, cameraZ);
-
     
-    cout<<sensorReading<<endl;
-    //sensor reading range (0 - 100)
+    if(fadeOutRain){
+        if(mourn.getVolume() > 0){
+            float vol = mourn.getVolume();
+            vol -= 0.0007;
+            mourn.setVolume(vol);
+        }
+        
+        if(mourn.getVolume() <= 0.01){
+            mourn.stop();
+        }
+    }
+    
+    
+    cout<< "rain vol: " << mourn.getVolume() << " transendence vol " << transcend.getVolume()<<endl;
+    
 }
 //--------------------------------------------------------------
 void ofApp::draw()
 {
-	
-
-	if(oculusRift.isSetup()){
+    
+    
+    if(fadeInRain){
+    
+        if(mourn.getVolume() < 0.9 && !fadeOutRain){
+            float vol = mourn.getVolume();
+            vol += 0.01;
+            mourn.setVolume(vol);
+        }
         
-        ofSetColor(255);
-		glEnable(GL_DEPTH_TEST);
+        if(oculusRift.isSetup()){
+            
+            ofSetColor(255);
+            glEnable(GL_DEPTH_TEST);
+            
+            oculusRift.beginLeftEye();
+            drawScene();
+            oculusRift.endLeftEye();
+            
+            oculusRift.beginRightEye();
+            drawScene();
+            oculusRift.endRightEye();
+            
+            oculusRift.draw();
+            
+            glDisable(GL_DEPTH_TEST);
+        }
+        else{
+            cam.begin();
+            drawScene();
+            cam.end();
+        }
 
-		oculusRift.beginLeftEye();
-		drawScene();
-		oculusRift.endLeftEye();
-		
-		oculusRift.beginRightEye();
-		drawScene();
-		oculusRift.endRightEye();
-		
-		oculusRift.draw();
-		
-		glDisable(GL_DEPTH_TEST);
     }
-	else{
-		cam.begin();
-		drawScene();
-		cam.end();
-	}
-	
+    
+
 }
 
 float quadSize = 2;
@@ -196,15 +288,16 @@ const int YCellCount = Height / Step;
 bool bInitCellsOnce = true;
 int frameCounter = 0;
 #ifdef USE_TWO_KINECTS
-    const int KinectCount = 2;
+const int KinectCount = 2;
 #else
-    const int KinectCount = 1;//2;
+const int KinectCount = 1;//2;
 #endif
 ofVec3f oldPoints[XCellCount][YCellCount][KinectCount];
 //TODO: add some per point noise data for concentration??
 float Kinect2X = 0;
 float Kinect2Y = 0;
 float Kinect2Z = 0;
+
 
 //--------------------------------------------------------------
 void ofApp::drawScene()
@@ -287,7 +380,7 @@ void ofApp::drawPointCloud() {
                 scatterIndicator++;
             }
             
-       
+            
             
             for(int i=0;i<stillPointCloud.size()-1;i++){
                 
@@ -310,7 +403,7 @@ void ofApp::drawPointCloud() {
         }
     }
     
-
+    
 }
 //--------------------------------------------------------------
 
@@ -318,7 +411,7 @@ void ofApp::drawPointCloud() {
 
 void ofApp::guiEvent(ofxUIEventArgs &e)
 {
-
+    
     if(e.getName() == "SENSOR READING"){
         ofxUISlider *slider = e.getSlider();
         sensorReading = slider->getScaledValue();
@@ -355,60 +448,68 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         ofxUISlider *slider = e.getSlider();
         kPosZ = slider->getScaledValue();
     }
-    
 }
 
 //--------------------------------------------------------------
+
+
 void ofApp::keyPressed(int key)
 {
-	if( key == 'f' )
-	{
-		//gotta toggle full screen for it to be right
-		ofToggleFullscreen();
-	}
-	
-	if(key == 's'){
-//		oculusRift.reloadShader();
+    
+    
+    if(key=='a'){
+        fadeInRain = true;
+    }
+    if( key == 'f' )
+    {
+        //gotta toggle full screen for it to be right
+        ofToggleFullscreen();
+    }
+    
+    if(key == 's'){
+        //		oculusRift.reloadShader();
         freezePointCloud = true;
-	}
-	
+    }
+    
     if(key == 'd'){
         startDecompose = true;
     }
     
-	if(key == 'l'){
-		oculusRift.lockView = !oculusRift.lockView;
-	}
-	
-
-	if(key == 'r'){
-//		oculusRift.reset();
+    if(key == 'l'){
+        oculusRift.lockView = !oculusRift.lockView;
+    }
+    
+    if(key == 'r'){
+        //		oculusRift.reset();
         startTranscend  = true;
         transcend.play();
+        fadeInTransendance = true;
+        fadeOutRain = true;
+//        mourn.stop();
         transcend.setLoop(true);
-	}
+    }
     
-	if(key == 'h'){
-		ofHideCursor();
-	}
-	if(key == 'H'){
-		ofShowCursor();
-	}
+    if(key == 'h'){
+        ofHideCursor();
+    }
+    if(key == 'H'){
+        ofShowCursor();
+    }
     
     if(key == 'g'){
         gui->toggleVisible();
     }
-	
-	if(key == 'p'){
-		predictive = !predictive;
-		oculusRift.setUsePredictedOrientation(predictive);
-	}
+    
+    if(key == 'p'){
+        predictive = !predictive;
+        oculusRift.setUsePredictedOrientation(predictive);
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key)
 {
-
+    
 }
 
 void ofApp::exit()
@@ -419,41 +520,41 @@ void ofApp::exit()
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y)
 {
- //   cursor2D.set(x, y, cursor2D.z);
+    //   cursor2D.set(x, y, cursor2D.z);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button)
 {
-//    cursor2D.set(x, y, cursor2D.z);
+    //    cursor2D.set(x, y, cursor2D.z);
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button)
 {
-
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button)
 {
-
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h)
 {
-
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg)
 {
-
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo)
 {
-
+    
 }
