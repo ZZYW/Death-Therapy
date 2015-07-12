@@ -84,11 +84,12 @@ class ofApp : public ofBaseApp
     float noiseSeed;
     
 //    vector<float> individualVariety;
+   
+    ofSoundPlayer mourn;
+    ofSoundPlayer transcend;
+    ofSoundPlayer bowl;
     
-    ofSoundPlayer leftSound;
-    ofSoundPlayer rightSound;
-    
-    ofSoundPlayer startMusic;
+
 
     
     bool hideGUI;

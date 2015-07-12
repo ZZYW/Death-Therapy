@@ -9,6 +9,7 @@ bool freezePointCloud = false;
 bool capturedLastMoment = false;
 bool startDecompose = false;
 
+bool startTranscend = false;
 bool startRising = false;
 
 float volume = 1;
@@ -28,11 +29,12 @@ vector<Particle> stillPointCloud;
 
 void ofApp::setup()
 {
-    
-    rightSound.loadSound("Articulate_Silences,_Pt__1.mp3");
-    
-    rightSound.play();
-    rightSound.setLoop(true);
+    mourn.loadSound("rain.mp3");
+    transcend.loadSound("transcendance.mp3");
+    bowl.loadSound("bowlsinging.mp3");
+
+    mourn.play();
+    mourn.setLoop(true);
     
 	ofBackground(0);
     ofEnableSmoothing();
@@ -103,7 +105,7 @@ float changeRate = 0.50; //increase
 float changeRate2 = 0.2;//decrease
 
 
-float cameraAcce = 0;
+float cameraAcce = 100;
 
 
 
@@ -132,21 +134,22 @@ void ofApp::update()
     }
     
 
-    //set camera position
     
     
-    if(sensorReading > 50){
-        cameraAcce = 0.5;
+    //trigger camera rise
+    if(sensorReading>50){
+        startRising = true;
     }else{
-        cameraAcce = 0;
+        startRising = false;
     }
-    
+
+    //set camera position
     if(startRising){
-        cameraY += cameraAcce;
+        float cameraYNew = cameraY + cameraAcce;
+        if(cameraY<cameraYNew){
+            cameraY += 0.01;
+        }
     }
-    
-    
-    
     
     cam.setPosition(cameraX, cameraY, cameraZ);
 
@@ -380,7 +383,9 @@ void ofApp::keyPressed(int key)
 
 	if(key == 'r'){
 //		oculusRift.reset();
-        startRising = true;
+        startTranscend  = true;
+        transcend.play();
+        transcend.setLoop(true);
 	}
     
 	if(key == 'h'){
