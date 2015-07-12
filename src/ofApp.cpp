@@ -105,6 +105,8 @@ float changeRate2 = 0.2;//decrease
 
 float cameraAcce = 0;
 
+
+
 void ofApp::update()
 {
 
@@ -133,8 +135,11 @@ void ofApp::update()
     //set camera position
     
     
-    cameraAcce = ofMap(sensorReading, 0, 100, -0.5, 2);
-    cout<<cameraAcce<<endl;
+    if(sensorReading > 50){
+        cameraAcce = 0.5;
+    }else{
+        cameraAcce = 0;
+    }
     
     if(startRising){
         cameraY += cameraAcce;
